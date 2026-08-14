@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { LAUNCH_DATE, assets } from './siteConfig'
+import introVideo from './assets/intro-vid-web.mp4'
 import './App.css'
 
 function InstagramIcon({ size = 17, ...props }) {
@@ -94,47 +95,81 @@ function AnimatedLetters({ text }) {
   )
 }
 
-function LuxuryLoader({ progress }) {
+function IntroVideo({ onComplete }) {
+  const videoRef = useRef(null)
+  const [needsPlay, setNeedsPlay] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const [progress, setProgress] = useState(0)
   const knobOffset = 9 - progress * 0.18
   const progressPosition = `calc(${progress}% + ${knobOffset}px)`
 
+  const startVideo = () => {
+    const playAttempt = videoRef.current?.play()
+    playAttempt?.then(() => setNeedsPlay(false)).catch(() => setNeedsPlay(true))
+  }
+
+  useEffect(() => {
+    startVideo()
+  }, [])
+
+  useEffect(() => {
+    let animationFrame
+
+    const updateProgress = () => {
+      const video = videoRef.current
+      if (video && Number.isFinite(video.duration) && video.duration > 0) {
+        setProgress(Math.min(100, (video.currentTime / video.duration) * 100))
+      }
+      animationFrame = window.requestAnimationFrame(updateProgress)
+    }
+
+    animationFrame = window.requestAnimationFrame(updateProgress)
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [])
+
   return (
     <motion.div
-      className="luxury-loader"
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0, filter: 'blur(10px)' }}
-      transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
-      role="status"
-      aria-label="Loading Arulmathi Silks"
+      className="intro-video-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
-      <motion.img
-        src={assets.logoImage}
-        alt="Arulmathi Silks"
-        initial={{ opacity: 0, y: 18, scale: 0.94 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      <video
+        ref={videoRef}
+        src={introVideo}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onCanPlay={startVideo}
+        onPlaying={() => setNeedsPlay(false)}
+        onEnded={onComplete}
+        onError={() => setHasError(true)}
+        aria-label="Arulmathi Silks introduction"
       />
-      <motion.div className="loader-thread" aria-hidden="true">
-        <motion.span
-          initial={{ width: '9px' }}
-          animate={{ width: progressPosition }}
-          transition={{ duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
-        />
-        <motion.i
-          className="loader-knob"
-          initial={{ left: '9px' }}
-          animate={{ left: progressPosition }}
-          transition={{ duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </motion.div>
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.8 }}
-      >
-        Weaving Heritage
-        <span>{progress}%</span>
-      </motion.p>
+      <div className="intro-progress" role="status" aria-label={`Introduction ${Math.round(progress)}% complete`}>
+        <div className="loader-thread" aria-hidden="true">
+          <span style={{ width: progressPosition }} />
+          <i className="loader-knob" style={{ left: progressPosition }} />
+        </div>
+        <p>
+          Weaving Heritage
+          <span>{Math.round(progress)}%</span>
+        </p>
+      </div>
+      {needsPlay && !hasError && (
+        <button className="intro-play-button" type="button" onClick={startVideo}>
+          <Play size={18} fill="currentColor" />
+          Play introduction
+        </button>
+      )}
+      {hasError && (
+        <div className="intro-video-error" role="alert">
+          <p>The introduction video could not be played.</p>
+          <button type="button" onClick={onComplete}>Continue to website</button>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -184,6 +219,9 @@ function Header() {
         </span>
         <span className="nav-mark-frame">
           <img src={assets.navImage2} alt="Silk Mark" />
+        </span>
+          <span className="nav-mark-frame">
+          <img src={assets.navImage3} alt="Silk Mark" />
         </span>
       </div>
       <div className="nav-right">
@@ -474,29 +512,14 @@ function LuxuryComingSoon() {
 }
 
 function App() {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [loadingProgress, setLoadingProgress] = useState(0)
-
-  useEffect(() => {
-    let isCancelled = false
-    const timeouts = [
-      window.setTimeout(() => !isCancelled && setLoadingProgress(25), 800),
-      window.setTimeout(() => !isCancelled && setLoadingProgress(50), 1800),
-      window.setTimeout(() => !isCancelled && setLoadingProgress(70), 2800),
-      window.setTimeout(() => !isCancelled && setLoadingProgress(90), 3900),
-      window.setTimeout(() => !isCancelled && setLoadingProgress(100), 4700),
-      window.setTimeout(() => !isCancelled && setIsLoaded(true), 5200),
-    ]
-
-    return () => {
-      isCancelled = true
-      timeouts.forEach((timeout) => window.clearTimeout(timeout))
-    }
-  }, [])
+  const [stage, setStage] = useState('intro')
 
   return (
     <AnimatePresence mode="wait">
-      {isLoaded ? <LuxuryComingSoon key="site" /> : <LuxuryLoader key="loader" progress={loadingProgress} />}
+      {stage === 'intro' && (
+        <IntroVideo key="intro" onComplete={() => setStage('site')} />
+      )}
+      {stage === 'site' && <LuxuryComingSoon key="site" />}
     </AnimatePresence>
   )
 }
