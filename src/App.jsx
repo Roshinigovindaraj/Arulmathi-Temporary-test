@@ -9,7 +9,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { LAUNCH_DATE, assets } from './siteConfig'
-import introVideo from './assets/intro-vid-web.mp4'
+import introVideo from './assets/into-video.mp4'
 import './App.css'
 
 function InstagramIcon({ size = 17, ...props }) {

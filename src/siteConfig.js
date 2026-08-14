@@ -1,6 +1,6 @@
 import heroImage from './assets/hero-bg.png'
 import logoImage from './assets/Logo.png'
-import founderVideo from './assets/Founder-video.mp4'
+import founderVideo from './assets/founder-vid.mp4'
 import navImage1 from './assets/navimg1.png'
 import navImage2 from './assets/navimg2.png'
 import navImage3 from './assets/ind-hand.png'
