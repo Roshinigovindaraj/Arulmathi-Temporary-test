@@ -7,6 +7,8 @@ import {
   Mail,
   Play,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import { LAUNCH_DATE, assets } from './siteConfig'
 import introVideo from './assets/into-video.mp4'
@@ -97,20 +99,37 @@ function AnimatedLetters({ text }) {
 
 function IntroVideo({ onComplete }) {
   const videoRef = useRef(null)
-  const [needsPlay, setNeedsPlay] = useState(false)
+  const [needsPlay, setNeedsPlay] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const [progress, setProgress] = useState(0)
   const knobOffset = 9 - progress * 0.18
   const progressPosition = `calc(${progress}% + ${knobOffset}px)`
 
   const startVideo = () => {
-    const playAttempt = videoRef.current?.play()
+    const video = videoRef.current
+    if (!video) return
+
+    video.muted = false
+    video.volume = 1
+    setIsMuted(false)
+    const playAttempt = video.play()
     playAttempt?.then(() => setNeedsPlay(false)).catch(() => setNeedsPlay(true))
   }
 
-  useEffect(() => {
-    startVideo()
-  }, [])
+  const toggleSound = () => {
+    const video = videoRef.current
+    if (!video) return
+
+    const shouldMute = !isMuted
+    video.muted = shouldMute
+    video.volume = 1
+    setIsMuted(shouldMute)
+
+    if (video.paused) {
+      video.play().then(() => setNeedsPlay(false)).catch(() => setNeedsPlay(true))
+    }
+  }
 
   useEffect(() => {
     let animationFrame
@@ -138,11 +157,9 @@ function IntroVideo({ onComplete }) {
       <video
         ref={videoRef}
         src={introVideo}
-        autoPlay
-        muted
+        muted={isMuted}
         playsInline
         preload="auto"
-        onCanPlay={startVideo}
         onPlaying={() => setNeedsPlay(false)}
         onEnded={onComplete}
         onError={() => setHasError(true)}
@@ -158,10 +175,21 @@ function IntroVideo({ onComplete }) {
           <span>{Math.round(progress)}%</span>
         </p>
       </div>
+      {!hasError && !needsPlay && (
+        <button
+          className="intro-sound-button"
+          type="button"
+          onClick={toggleSound}
+          aria-label={isMuted ? 'Turn on video sound' : 'Mute video sound'}
+        >
+          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          {isMuted ? 'Turn on sound' : 'Mute'}
+        </button>
+      )}
       {needsPlay && !hasError && (
         <button className="intro-play-button" type="button" onClick={startVideo}>
           <Play size={18} fill="currentColor" />
-          Play introduction
+          Play with sound
         </button>
       )}
       {hasError && (

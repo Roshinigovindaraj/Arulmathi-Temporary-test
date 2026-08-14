@@ -222,6 +222,25 @@
   cursor: pointer;
 }
 
+.intro-sound-button {
+  position: absolute;
+  z-index: 3;
+  top: max(20px, env(safe-area-inset-top));
+  right: max(20px, env(safe-area-inset-right));
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border: 1px solid rgba(229, 196, 122, 0.65);
+  border-radius: 999px;
+  background: rgba(13, 8, 5, 0.82);
+  color: var(--gold-light);
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
 .intro-video-error {
   width: min(420px, calc(100vw - 40px));
   padding: 28px;
